@@ -40,14 +40,5 @@ Managing a professional LinkedIn presence is time-consuming. This project automa
 ## 👤 Author
 
 **Tusha Rahul Bellamkonda**
-* [Portfolio/Articles](https://tusharahul.netlify.app/)
 
----
-
-### 💡 Pro-Tips for your GitHub repository:
-
-1. **Add a GIF**: LinkedIn automation is visual. A 10-second screen recording showing the AI taking a URL and spitting out a LinkedIn post will increase your "stars" significantly.
-2. **Highlight your "Why"**: In the "Key Learnings" or "Why This Matters" section, emphasize that you built this to solve a real-world problem (manual content overhead). Recruiters love engineers who solve their own workflow bottlenecks.
-3. **Use Badges**: Add badges for your tech stack (e.g., `![Python](https://img.shields.io/badge/Python-3.11-blue)`) to make the README look more professional.
-
-[LinkedIn AI Automation Tutorial](https://tusharahul.netlify.app/articles/linkedin-automation)
+*[LinkedIn AI Automation Tutorial](https://tusharahul.netlify.app/articles/linkedin-automation)*
