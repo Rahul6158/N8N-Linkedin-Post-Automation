@@ -1,0 +1,351 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message }}",
+        "options": {
+          "systemMessage": "Role: Senior AI Content Strategist and Elite LinkedIn Ghostwriter for founders, operators, and AI builders.\n\nObjective:\nCreate insightful, research-driven LinkedIn posts that position the author as a thoughtful industry voice. The post should reveal strategic implications, not simply summarize news.\n\nResearch Requirement:\nBefore writing the post, you MUST call the Tavily Search tool.\n\nYou must:\n• Search for recent developments, credible reporting, data points, and expert commentary related to the topic.\n• Prioritize the most recent and reliable information available.\n• Identify non-obvious insights and strategic implications.\n\nYou are NOT allowed to rely on prior knowledge.\n\nYou must use Tavily research internally before writing.\n\nNever show the research process in the output.\n\nDo NOT show:\n• research queries\n• summaries\n• reasoning\n• tool calls\n\nWriting Objective:\nTurn research insights into a compelling LinkedIn narrative that makes readers pause, think, and engage.\n\nFocus on:\n• strategic implications\n• industry shifts\n• founder/operator perspectives\n• second-order effects\n\nAvoid:\n• summarizing articles\n• reporting news like a journalist\n• generic tech commentary\n\nContent Requirements:\n\nLength: 150–220 words\n\nParagraph style:\nShort paragraphs (1–3 lines).\n\nStructure:\nDo NOT follow the same structure every time.\n\nVary the narrative style across posts, including formats such as:\n• Contrarian observation\n• Mini case study\n• Strategic breakdown\n• Pattern recognition\n• Founder lesson\n• Industry shift\n• Personal insight framing\n\nHooks:\nStart with a scroll-stopping hook that creates curiosity, tension, or a surprising insight.\n\nExamples of strong hook types:\n• Counterintuitive statement\n• Unexpected data point\n• Pattern across multiple companies\n• Founder-level insight\n• Industry myth being challenged\n\nInsight Quality:\nInclude 2–4 sharp insights that feel thoughtful and original.\n\nInsights should highlight:\n• strategic implications\n• business impact\n• product implications\n• long-term industry effects\n\nAvoid generic lines like:\n“The future of AI is exciting.”\n\nTone:\nProfessional, sharp, thoughtful, slightly opinionated.\n\nSound like a founder or strategic thinker, not a journalist.\n\nNatural conversational authority is preferred.\n\nEnding:\nEnd with a thoughtful engagement question that encourages discussion.\n\nHashtags:\nInclude 3–5 relevant hashtags.\n\nAvoid generic hashtags like #technology.\n\nStrict Output Rules:\n\nOutput ONLY the LinkedIn post.\n\nDo NOT output:\n• JSON\n• markdown\n• headings\n• explanations\n• meta commentary\n• research summaries\n\nStart directly with the hook.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -448,
+        384
+      ],
+      "id": "d8585916-8c36-400f-9cd2-b6c6f55f10af",
+      "name": "AI Agent",
+      "retryOnFail": false,
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        576
+      ],
+      "id": "119eb2ae-9ca3-48cf-9454-a791d22e084d",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "Bwmc2oRanCbQHN3i",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Tavily research tool - used for fetching the recent and relevant data from the provided refined prompt ",
+        "query": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Query', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "@tavily/n8n-nodes-tavily.tavilyTool",
+      "typeVersion": 1,
+      "position": [
+        -304,
+        576
+      ],
+      "id": "9f9e76a6-f279-4ac5-977c-36aef19ee287",
+      "name": "Search in Tavily",
+      "credentials": {
+        "tavilyApi": {
+          "id": "o4Klv86qAITxGohR",
+          "name": "Tavily account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawOutput = $json.output || \"\";\n\n// Remove markdown fences\nlet cleaned = rawOutput.replace(/```json|```/g, '').trim();\n\nlet post = \"\";\nlet visual_prompt = \"\";\nlet target_audience = \"\";\nlet angle = \"\";\n\ntry {\n  const parsed = JSON.parse(cleaned);\n\n  post = parsed.post || \"\";\n  visual_prompt = parsed.visual_prompt || \n    \"Cinematic AI lab environment, futuristic lighting, ultra-detailed, professional, high resolution\";\n  target_audience = parsed.target_audience || \"\";\n  angle = parsed.angle || \"\";\n\n} catch (e) {\n  post = cleaned;\n  visual_prompt = \"Cinematic AI lab environment, futuristic lighting, ultra-detailed, professional, high resolution\";\n}\n\nreturn [{\n  json: {\n    post,\n    visual_prompt,\n    target_audience,\n    angle\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -96,
+        384
+      ],
+      "id": "8db6f904-2ef2-4cb8-a361-80758be6c30f",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Get the messy output from the Agent\nconst rawText = $json.output || $json.text || \"\";\n\n// 2. Extract the prompt using a targeted Regex\n// This looks for the text between \"image_prompt\": and the closing quote\nconst promptMatch = rawText.match(/\"image_prompt\":\\s*\"([^\"]+)\"/);\n\nlet finalPrompt = \"\";\n\nif (promptMatch && promptMatch[1]) {\n    // If we found the JSON value, use it\n    finalPrompt = promptMatch[1];\n} else {\n    // Fallback: If no JSON found, take the last line of text\n    const lines = rawText.trim().split('\\n');\n    finalPrompt = lines[lines.length - 1];\n}\n\n// 3. Clean up any remaining artifacts\nconst cleanPrompt = finalPrompt\n    .replace(/[{}]/g, '') // Remove any stray braces\n    .trim();\n\n// 4. Return the single string\nreturn {\n    json: {\n        generate: cleanPrompt\n    }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        384
+      ],
+      "id": "cb7d2dcb-bfd4-4190-b83a-a022d7ba0272",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -672,
+        384
+      ],
+      "id": "8b19af71-cd4f-4d6e-bb88-5792fc687482",
+      "name": "Telegram Trigger",
+      "webhookId": "11a8d379-12ad-4e9b-a15c-832af68e2bef",
+      "credentials": {
+        "telegramApi": {
+          "id": "FnIOvQqYUY6YcwmR",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "person": "BoaYK01ljv",
+        "text": "={{ $('Code in JavaScript').item.json.post }}",
+        "shareMediaCategory": "IMAGE",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        928,
+        384
+      ],
+      "id": "4d227561-e8f4-473a-b200-4e1a77209a38",
+      "name": "Create a post1",
+      "credentials": {
+        "linkedInOAuth2Api": {
+          "id": "6M2oTWxBm1bCx5lm",
+          "name": "LinkedIn account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        128,
+        576
+      ],
+      "id": "e230fb3d-51d7-414a-a975-01d60d476c0e",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "Bwmc2oRanCbQHN3i",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Role: Senior Visual Concept Strategist and Expert Image Prompt Engineer.\n\nInput LinkedIn Post:\n{{ $json.post }}\n\nObjective:\nAnalyze the LinkedIn post and convert its central idea into a compelling visual scene suitable for a professional LinkedIn audience.\n\nThe goal is to produce a scroll-stopping image that clearly represents the idea while remaining easy for diffusion image models to generate cleanly.\n\nAnalysis Steps:\n\n1. Identify the core topic of the post.\n2. Identify the key concept or contrast being discussed.\n3. Translate the idea into a **clear visual scene**.\n\nVisual Strategy:\n\nPrefer imagery that diffusion models render reliably:\n\n• silhouettes\n• shadow figures\n• over-the-shoulder perspectives\n• back-view characters\n• workspaces and environments\n• screens, tools, desks, or creative objects\n• symbolic physical scenes\n\nAvoid visuals that commonly break diffusion models:\n\n• detailed human faces\n• complex anatomy\n• hands in focus\n• large groups of people\n• complicated action poses\n\nIf a person is included, prefer:\n\n• silhouette figure\n• back view\n• shadow figure\n• small figure within environment\n\nVisual Design Rules:\n\n• Always include a clear **subject and environment**\n• Prefer **scene-based imagery**, not abstract metaphors\n• Avoid generic corporate architecture (bridges, skyscrapers, buildings) unless the post explicitly discusses infrastructure\n• Avoid vague glowing tech spheres or generic “AI concept art”\n\nImage Generation Optimization:\n\nDesign prompts that generate clean images with diffusion models by including:\n\n• simple but strong compositions\n• clear foreground subject\n• readable visual contrast\n• minimal anatomical complexity\n\nStyle Requirements:\n\nInclude:\n\n• subject or scene\n• artistic style (photorealistic, cinematic photography, editorial illustration, minimalist 3D render)\n• lighting description\n• camera perspective\n• high-detail descriptors\n\nExample structure:\n\nSubject and environment, artistic style, lighting, camera perspective, high-detail descriptors.\n\nOutput Constraints:\n\n• Generate exactly one image prompt\n• 15–20 words preferred\n• Maximum 40 words\n• Single line only\n• No explanations\n• No quotes\n• No hashtags\n• No markdown\n\nOutput strictly in this JSON format:\n\n{ \"image_prompt\": \"scene subject, style, lighting, camera perspective, high detail\" }\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        128,
+        384
+      ],
+      "id": "08d3b106-5004-4bcd-9786-43b10412ac37",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://image-gen-api.tusharahul2003.workers.dev/",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer Tusharahul@58"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"prompt\": \"{{ $json.generate }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        704,
+        384
+      ],
+      "id": "27f4b9e2-85e3-47ee-9d78-d3f7a3c2db41",
+      "name": "HTTP Request1",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "uuw3LAVVCl5vYD2a",
+          "name": "Bearer Auth account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "5809290032",
+        "text": "=✅ LinkedIn Post Published Successfully!\n\n🔗 https://www.linkedin.com/feed/update/{{ $json.urn }}/",
+        "replyMarkup": "forceReply",
+        "forceReply": {},
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1152,
+        384
+      ],
+      "id": "78080968-b6ba-4c33-a407-c00fdf9c72e4",
+      "name": "Send a text message",
+      "webhookId": "65dd98b9-64d5-4a5d-a428-e3761802d2eb",
+      "credentials": {
+        "telegramApi": {
+          "id": "FnIOvQqYUY6YcwmR",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search in Tavily": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a post1": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Create a post1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e2eb30e043c3705622327f81d9316e7b0aa17b17c774f1406a5733d6bcf7c099"
+  }
+}
